@@ -76,11 +76,17 @@ struct ContentView: View {
             }
             if !scan.groups.isEmpty {
                 Section {
-                    Text("Vigil only reads. It never changes a setting, sends data anywhere or runs anything as administrator.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 6) {
+                        Text("Vigil only reads. It never changes a setting, sends data anywhere or runs anything as administrator.")
+                        HStack(spacing: 4) {
+                            Text("© 2026 Dominik Rudkowski ·")
+                            Link("Source code", destination: URL(string: "https://github.com/rudkowski-dominik/Vigil")!)
+                        }
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
                 }
             }
         }
