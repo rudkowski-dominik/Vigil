@@ -10,6 +10,8 @@
   - A computer name that includes your name, which everyone on the same Wi-Fi sees.
   - Time Machine backups that aren't encrypted.
 - App icon, also shown at the top of the window with a badge for the result.
+- Check Again shows a spinner while checking, and Copy Report confirms with "Copied".
+- Status icons explain what they mean when clicked, and clicking a row opens its list.
 
 ## 1.0
 
