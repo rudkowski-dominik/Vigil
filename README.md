@@ -23,6 +23,13 @@ It is open source so you can see exactly what it reads. It never writes, never a
 | | AirDrop | Not visible to everyone |
 | | Apps Accepting Connections | Lists apps that listen on a network address, with who signed them |
 | Who Has Access | Full Disk Access, Screen Recording, Accessibility, Input Monitoring, Camera, Microphone | Lists the apps you allowed |
+| What Could Leak | SSH Keys | Every private key in `~/.ssh` has a passphrase |
+| | Passwords and Tokens in Plain Text | No tokens, API keys or passwords in your shell history or common config files |
+| | Trusted Certificates | No root certificates were added besides Apple's |
+| | Proxy | No web or SOCKS proxy is set |
+| | DNS Servers | DNS comes from the network or a well-known public service |
+| | Computer Name | The name other devices see doesn't include yours |
+| | Time Machine Backups | Every backup disk is encrypted |
 | Runs Automatically | Launch Agents and Daemons | Every background program is signed by an identified developer |
 | | System Extensions | Lists installed extensions |
 | | Device Management | Shows whether an organization manages the Mac |
@@ -62,9 +69,18 @@ Every check uses a public macOS command or reads a file. Nothing runs as root. Y
 | AirDrop | `DiscoverableMode` in `com.apple.sharingd` preferences |
 | Apps Accepting Connections | `lsof -iTCP -sTCP:LISTEN`, without loopback addresses |
 | Who Has Access | The TCC databases in `/Library/Application Support/com.apple.TCC/` and `~/Library/Application Support/com.apple.TCC/`, opened read-only |
+| SSH Keys | Private key headers in `~/.ssh`; for OpenSSH keys, the cipher name inside the key |
+| Passwords and Tokens in Plain Text | `~/.zsh_history`, `~/.bash_history`, `~/.zsh_sessions`, and credential lines in `~/.aws/credentials`, `~/.netrc`, `~/.git-credentials`, `~/.npmrc`, `~/.yarnrc.yml`, `~/.pypirc`, `~/.docker/config.json`, `~/.config/gh/hosts.yml` |
+| Trusted Certificates | `SecTrustSettingsCopyCertificates` for the user and admin domains (`security dump-trust-settings`) |
+| Proxy | `SCDynamicStoreCopyProxies` (`scutil --proxy`) |
+| DNS Servers | DNS servers set by hand on the primary network service (`scutil --dns`) |
+| Computer Name | Computer name and local host name compared with your account name (`scutil --get ComputerName`) |
+| Time Machine Backups | `LastKnownEncryptionState` in `/Library/Preferences/com.apple.TimeMachine.plist` |
 | Launch Agents and Daemons | Property lists in `~/Library/LaunchAgents`, `/Library/LaunchAgents` and `/Library/LaunchDaemons` |
 | System Extensions | `systemextensionsctl list` |
 | Device Management | `profiles status -type enrollment` |
+
+Vigil never shows a secret it finds. It reports which file holds one and what kind it is, such as "a GitHub token", so you know where to look.
 
 Code signatures are verified with the Security framework (`SecStaticCodeCheckValidity`), the same API Gatekeeper uses. A program counts as signed when it carries a valid Apple or Developer ID signature. Ad-hoc signatures and broken signatures are flagged, because nobody vouches for that code.
 
@@ -79,6 +95,8 @@ To print the report in Terminal instead of opening the window:
 - **Apps Accepting Connections** sees only processes that run as you. System services are covered by the Sharing checks.
 - **Login items** that apps register through `SMAppService` are stored in a database that only root can read.
   Vigil lists the launch agents and daemons it can read; System Settings → General → Login Items shows the rest.
+- **Passwords and Tokens** looks at shell history and well-known config files, not at every file on your Mac.
+  It recognizes common token formats and assignments such as `API_KEY=…`, so it can miss secrets in other forms.
 - Vigil reports settings. It isn't an antivirus and doesn't scan files for malware. XProtect, built into macOS, does that.
 
 ## Build

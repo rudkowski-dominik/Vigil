@@ -17,6 +17,7 @@ lipo -create -output "$APP/Contents/MacOS/Vigil" build/Vigil-arm64 build/Vigil-x
 rm build/Vigil-arm64 build/Vigil-x86_64
 
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 codesign --force --sign - "$APP"
 
 ditto -c -k --keepParent "$APP" build/Vigil.zip

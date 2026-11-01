@@ -11,6 +11,7 @@ enum Checks {
             CheckGroup(title: "Sign-In", checks: [screenLock(), automaticLogin(), guestAccount()]),
             CheckGroup(title: "Sharing", checks: sharingServices() + [airDrop(), networkListeners()]),
             CheckGroup(title: "Who Has Access", checks: Privacy.checks()),
+            CheckGroup(title: "What Could Leak", checks: Leaks.checks()),
             CheckGroup(title: "Runs Automatically", checks: [launchItems(), systemExtensions(), management()]),
         ]
     }

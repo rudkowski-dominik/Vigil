@@ -44,6 +44,9 @@ enum SettingsPane: String {
     case sharing = "com.apple.Sharing-Settings.extension"
     case airDrop = "com.apple.AirDrop-Handoff-Settings.extension"
     case loginItems = "com.apple.LoginItems-Settings.extension"
+    case network = "com.apple.Network-Settings.extension"
+    case about = "com.apple.SystemProfiler.AboutExtension"
+    case timeMachine = "com.apple.Time-Machine-Settings.extension"
 
     func open() {
         if let url = URL(string: "x-apple.systempreferences:\(rawValue)") {

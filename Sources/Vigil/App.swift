@@ -101,10 +101,19 @@ struct ContentView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: headerSymbol)
-                .font(.system(size: 54, weight: .light))
-                .foregroundStyle(headerColor)
-                .contentTransition(.symbolEffect(.replace))
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 84, height: 84)
+                .overlay(alignment: .bottomTrailing) {
+                    if let badge = headerBadge {
+                        Image(systemName: badge)
+                            .font(.system(size: 24))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, headerColor)
+                            .background(Circle().fill(.background).padding(2))
+                            .offset(x: 2, y: 2)
+                    }
+                }
                 .padding(.top, 6)
 
             Text(headline)
@@ -130,14 +139,14 @@ struct ContentView: View {
         .multilineTextAlignment(.center)
     }
 
-    private var headerSymbol: String {
-        if scan.groups.isEmpty { return "shield" }
-        return scan.warnings == 0 ? "checkmark.shield.fill" : "exclamationmark.shield.fill"
+    /// The app icon carries a badge with the result, like a notification badge on a Dock icon.
+    private var headerBadge: String? {
+        if scan.groups.isEmpty { return nil }
+        return scan.warnings == 0 ? "checkmark.circle.fill" : "exclamationmark.circle.fill"
     }
 
     private var headerColor: Color {
-        if scan.groups.isEmpty { return .secondary }
-        return scan.warnings == 0 ? .green : .orange
+        scan.warnings == 0 ? .green : .orange
     }
 
     private var headline: String {
