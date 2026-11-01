@@ -41,7 +41,11 @@ final class Scan: ObservableObject {
         guard !running else { return }
         running = true
         Task {
-            groups = await Task.detached { Checks.all() }.value
+            // Checking can finish in a blink; keep the spinner up long enough to show that it ran.
+            async let minimum: Void = (try? await Task.sleep(for: .milliseconds(700))) ?? ()
+            let result = await Task.detached { Checks.all() }.value
+            await minimum
+            groups = result
             date = .now
             running = false
         }
@@ -65,6 +69,7 @@ enum Report {
 
 struct ContentView: View {
     @StateObject private var scan = Scan()
+    @State private var copied = false
 
     var body: some View {
         Form {
@@ -123,12 +128,29 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 10) {
-                Button("Check Again", action: scan.run)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(scan.running)
-                Button("Copy Report") {
+                Button(action: scan.run) {
+                    HStack(spacing: 6) {
+                        if scan.running {
+                            ProgressView().controlSize(.small)
+                        }
+                        Text(scan.running ? "Checking…" : "Check Again")
+                    }
+                    .frame(minWidth: 110)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(scan.running)
+
+                Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(Report.markdown(scan.groups, date: scan.date ?? .now), forType: .string)
+                    withAnimation { copied = true }
+                    Task {
+                        try? await Task.sleep(for: .seconds(2))
+                        withAnimation { copied = false }
+                    }
+                } label: {
+                    Label(copied ? "Copied" : "Copy Report", systemImage: copied ? "checkmark" : "doc.on.doc")
+                        .frame(minWidth: 110)
                 }
                 .disabled(scan.groups.isEmpty)
             }
@@ -167,22 +189,26 @@ struct ContentView: View {
 
 struct CheckRow: View {
     let check: Check
+    @State private var expanded = false
 
     var body: some View {
         if check.items.isEmpty {
             summary
         } else {
-            DisclosureGroup {
+            DisclosureGroup(isExpanded: $expanded) {
                 ForEach(check.items) { ItemRow(item: $0) }
             } label: {
+                // The whole row opens the list, not only the small arrow.
                 summary
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation { expanded.toggle() } }
             }
         }
     }
 
     private var summary: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
-            StatusIcon(status: check.status)
+            StatusButton(status: check.status, hasItems: !check.items.isEmpty)
             VStack(alignment: .leading, spacing: 2) {
                 Text(check.title)
                 Text(check.detail)
@@ -230,6 +256,44 @@ struct ItemRow: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable()
         } else {
             Image(systemName: "questionmark.app.dashed").font(.title3).foregroundStyle(.tertiary)
+        }
+    }
+}
+
+/// The status icon of a check. Clicking it explains what the status means.
+struct StatusButton: View {
+    let status: Status
+    let hasItems: Bool
+    @State private var showing = false
+
+    var body: some View {
+        Button { showing.toggle() } label: { StatusIcon(status: status) }
+            .buttonStyle(.plain)
+            .help(title)
+            .popover(isPresented: $showing, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title).font(.headline)
+                    Text(explanation).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+                .frame(width: 280, alignment: .leading)
+            }
+    }
+
+    private var title: String {
+        switch status {
+        case .pass: "Passed"
+        case .warn: "Needs your attention"
+        case .info: "For your information"
+        }
+    }
+
+    private var explanation: String {
+        let list = hasItems ? " Click the row to see the list." : ""
+        return switch status {
+        case .pass: "This setting protects your Mac."
+        case .warn: "This could put your Mac or your data at risk. The description says why. Where there is an Open Settings button, it takes you to the place to change it."
+        case .info: "There's no single right answer here, so it doesn't count toward the score. Check that you recognize and expect what Vigil found.\(list)"
         }
     }
 }
